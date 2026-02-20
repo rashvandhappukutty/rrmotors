@@ -153,9 +153,9 @@ app.post('/api/auth/admin-login', (req, res) => {
         token: Buffer.from(`${adminUsername}:${Date.now()}`).toString('base64')
       });
     } else {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Invalid username or password' 
+        message: 'Invalid username or password'
       });
     }
   } catch (error) {
@@ -168,7 +168,7 @@ app.post('/api/auth/admin-login', (req, res) => {
 app.get('/api/auth/admin', (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    
+
     if (!token) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -254,7 +254,7 @@ app.use((err, req, res, next) => {
 async function startServer() {
   // Test Supabase connection
   const isConnected = await testConnection();
-  
+
   if (!isConnected) {
     console.error('⚠️  Warning: Could not connect to Supabase');
   } else {
@@ -284,3 +284,5 @@ async function startServer() {
 }
 
 startServer();
+
+export default app;

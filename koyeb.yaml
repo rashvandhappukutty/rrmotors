@@ -1,0 +1,36 @@
+name: rrmotors
+services:
+  - name: rrmotors-web
+    type: web
+    regions:
+      - fra # Frankfurt is usually available in free tier
+    instance_types:
+      - nano
+    build:
+      command: npm install && npx vite build && cd server && npm install
+    run:
+      command: cd server && node index.js
+    ports:
+      - port: 5000
+        protocol: http
+    env:
+      - key: PORT
+        value: "5000"
+      - key: NODE_ENV
+        value: "production"
+      - key: VITE_API_URL
+        value: "/api"
+      - key: SUPABASE_URL
+        value: "{{ secrets.SUPABASE_URL }}"
+      - key: SUPABASE_ANON_KEY
+        value: "{{ secrets.SUPABASE_ANON_KEY }}"
+      - key: CLOUDINARY_CLOUD_NAME
+        value: "{{ secrets.CLOUDINARY_CLOUD_NAME }}"
+      - key: CLOUDINARY_API_KEY
+        value: "{{ secrets.CLOUDINARY_API_KEY }}"
+      - key: CLOUDINARY_API_SECRET
+        value: "{{ secrets.CLOUDINARY_API_SECRET }}"
+      - key: ADMIN_EMAIL
+        value: "{{ secrets.ADMIN_EMAIL }}"
+      - key: ADMIN_PASSWORD
+        value: "{{ secrets.ADMIN_PASSWORD }}"
