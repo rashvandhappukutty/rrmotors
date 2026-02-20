@@ -1,5 +1,6 @@
 import express from 'express';
 import { supabase } from '../config/supabase.js';
+import { enquiryService } from '../services/enquiryService.js';
 
 const router = express.Router();
 
@@ -24,18 +25,18 @@ async function getBrandsMap() {
     const { data, error } = await supabase
       .from('brands')
       .select('*');
-    
+
     if (error) throw error;
-    
+
     const brandMap = {};
     data?.forEach(brand => {
       brandMap[brand.id] = brand;
     });
-    
+
     // Update cache
     brandsCache = brandMap;
     lastBrandsCacheTime = now;
-    
+
     return brandMap;
   } catch (error) {
     console.error('Error fetching brands map:', error);
@@ -47,7 +48,7 @@ async function getBrandsMap() {
 // Helper to attach brands to bikes
 function attachBrands(bikes, brandMap) {
   if (!bikes || bikes.length === 0) return bikes;
-  
+
   return bikes.map(bike => ({
     ...bike,
     brands: brandMap[bike.brand_id] || { id: bike.brand_id, name: 'Unknown', logo_url: null }
@@ -66,7 +67,7 @@ router.get('/brands/list', async (req, res) => {
       .from('brands')
       .select('id, name, logo_url')
       .eq('active', true);
-    
+
     if (error) {
       console.error('Supabase error fetching brands:', error);
       throw error;
@@ -100,7 +101,7 @@ router.post('/brands/list', async (req, res) => {
     }
 
     if (existingBrand && existingBrand.length > 0) {
-      return res.status(409).json({ 
+      return res.status(409).json({
         message: `Brand "${existingBrand[0].name}" already exists`,
         existing: existingBrand[0]
       });
@@ -238,12 +239,12 @@ router.delete('/brands/list/:id', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const brandMap = await getBrandsMap();
-    
+
     const { data, error } = await supabase
       .from('bikes')
       .select('*')
       .eq('availability', true);
-    
+
     if (error) {
       console.error('Supabase error fetching bikes:', error);
       throw error;
@@ -261,21 +262,21 @@ router.get('/', async (req, res) => {
 router.get('/new/:id', async (req, res) => {
   try {
     const bikeId = parseInt(req.params.id);
-    
+
     if (isNaN(bikeId) || bikeId <= 0) {
       console.log('Invalid bike ID received:', req.params.id);
       return res.status(400).json({ message: 'Invalid bike ID' });
     }
-    
+
     console.log('Fetching bike by ID:', bikeId);
     const brandMap = await getBrandsMap();
-    
+
     const { data, error } = await supabase
       .from('bikes')
       .select('*')
       .eq('id', bikeId)
       .single();
-    
+
     if (error) {
       console.error('Supabase error fetching bike:', error);
       throw error;
@@ -284,12 +285,12 @@ router.get('/new/:id', async (req, res) => {
       console.log('No bike found with ID:', bikeId);
       return res.status(404).json({ message: 'Bike not found' });
     }
-    
+
     const result = {
       ...data,
       brands: brandMap[data.brand_id] || { id: data.brand_id, name: 'Unknown', logo_url: null }
     };
-    
+
     console.log('Bike fetched successfully:', result.id, result.name);
     res.json(result);
   } catch (error) {
@@ -302,15 +303,15 @@ router.get('/new/:id', async (req, res) => {
 router.get('/category/:category', async (req, res) => {
   try {
     const brandMap = await getBrandsMap();
-    
+
     const { data, error } = await supabase
       .from('bikes')
       .select('*')
       .eq('category', req.params.category)
       .eq('availability', true);
-    
+
     if (error) throw error;
-    
+
     const result = attachBrands(data, brandMap);
     res.json(result);
   } catch (error) {
@@ -322,15 +323,15 @@ router.get('/category/:category', async (req, res) => {
 router.get('/brand/:brandId', async (req, res) => {
   try {
     const brandMap = await getBrandsMap();
-    
+
     const { data, error } = await supabase
       .from('bikes')
       .select('*')
       .eq('brand_id', req.params.brandId)
       .eq('availability', true);
-    
+
     if (error) throw error;
-    
+
     const result = attachBrands(data, brandMap);
     res.json(result);
   } catch (error) {
@@ -342,7 +343,7 @@ router.get('/brand/:brandId', async (req, res) => {
 router.post('/new', async (req, res) => {
   try {
     const { brand_id, price, specs, features, ...bikeData } = req.body;
-    
+
     if (!brand_id) {
       return res.status(400).json({ message: 'brand_id is required' });
     }
@@ -356,7 +357,7 @@ router.post('/new', async (req, res) => {
         formattedPrice = `₹${priceNum.toLocaleString('en-IN')}`;
       }
     }
-    
+
     const processedData = {
       ...bikeData,
       brand_id,
@@ -365,14 +366,14 @@ router.post('/new', async (req, res) => {
       features: Array.isArray(features) ? features : [],
       availability: true
     };
-    
+
     const { data, error } = await supabase
       .from('bikes')
       .insert([processedData])
       .select('*');
-    
+
     if (error) throw error;
-    
+
     const brandMap = await getBrandsMap();
     const result = attachBrands(data, brandMap);
     res.json(result[0]);
@@ -399,10 +400,10 @@ router.put('/new/:id', async (req, res) => {
       .update(updatePayload)
       .eq('id', req.params.id)
       .select('*');
-    
+
     if (error) throw error;
     if (!data || data.length === 0) return res.status(404).json({ message: 'Bike not found' });
-    
+
     const brandMap = await getBrandsMap();
     const result = attachBrands(data, brandMap);
     res.json(result[0]);
@@ -418,7 +419,7 @@ router.delete('/new/:id', async (req, res) => {
       .from('bikes')
       .delete()
       .eq('id', req.params.id);
-    
+
     if (error) throw error;
     res.json({ message: 'Bike deleted successfully' });
   } catch (error) {
@@ -434,14 +435,14 @@ router.delete('/new/:id', async (req, res) => {
 router.get('/second-hand', async (req, res) => {
   try {
     const brandMap = await getBrandsMap();
-    
+
     const { data, error } = await supabase
       .from('second_hand_bikes')
       .select('*')
       .eq('availability', true);
-    
+
     if (error) throw error;
-    
+
     const result = attachBrands(data, brandMap);
     res.json(result);
   } catch (error) {
@@ -453,21 +454,21 @@ router.get('/second-hand', async (req, res) => {
 router.get('/second-hand/:id', async (req, res) => {
   try {
     const brandMap = await getBrandsMap();
-    
+
     const { data, error } = await supabase
       .from('second_hand_bikes')
       .select('*')
       .eq('id', req.params.id)
       .single();
-    
+
     if (error) throw error;
     if (!data) return res.status(404).json({ message: 'Bike not found' });
-    
+
     const result = {
       ...data,
       brands: brandMap[data.brand_id] || { id: data.brand_id, name: 'Unknown', logo_url: null }
     };
-    
+
     res.json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -478,15 +479,15 @@ router.get('/second-hand/:id', async (req, res) => {
 router.get('/second-hand/condition/:condition', async (req, res) => {
   try {
     const brandMap = await getBrandsMap();
-    
+
     const { data, error } = await supabase
       .from('second_hand_bikes')
       .select('*')
       .eq('condition', req.params.condition)
       .eq('availability', true);
-    
+
     if (error) throw error;
-    
+
     const result = attachBrands(data, brandMap);
     res.json(result);
   } catch (error) {
@@ -498,7 +499,7 @@ router.get('/second-hand/condition/:condition', async (req, res) => {
 router.post('/second-hand', async (req, res) => {
   try {
     const { brand_id, features, ...bikeData } = req.body;
-    
+
     if (!brand_id) {
       return res.status(400).json({ message: 'brand_id is required' });
     }
@@ -509,14 +510,14 @@ router.post('/second-hand', async (req, res) => {
       features: Array.isArray(features) ? features : [],
       availability: true
     };
-    
+
     const { data, error } = await supabase
       .from('second_hand_bikes')
       .insert([processedData])
       .select('*');
-    
+
     if (error) throw error;
-    
+
     const brandMap = await getBrandsMap();
     const result = attachBrands(data, brandMap);
     res.json(result[0]);
@@ -543,10 +544,10 @@ router.put('/second-hand/:id', async (req, res) => {
       .update(updatePayload)
       .eq('id', req.params.id)
       .select('*');
-    
+
     if (error) throw error;
     if (!data || data.length === 0) return res.status(404).json({ message: 'Bike not found' });
-    
+
     const brandMap = await getBrandsMap();
     const result = attachBrands(data, brandMap);
     res.json(result[0]);
@@ -562,7 +563,7 @@ router.delete('/second-hand/:id', async (req, res) => {
       .from('second_hand_bikes')
       .delete()
       .eq('id', req.params.id);
-    
+
     if (error) throw error;
     res.json({ message: 'Bike deleted successfully' });
   } catch (error) {
@@ -583,7 +584,7 @@ router.get('/enquiries', async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    
+
     res.json(data || []);
   } catch (error) {
     console.error('Error fetching enquiries:', error);
@@ -602,7 +603,7 @@ router.get('/enquiries/:id', async (req, res) => {
       .single();
 
     if (error) throw error;
-    
+
     res.json(data);
   } catch (error) {
     console.error('Error fetching enquiry:', error);
@@ -613,17 +614,10 @@ router.get('/enquiries/:id', async (req, res) => {
 // POST create new enquiry
 router.post('/enquiries', async (req, res) => {
   try {
-    const enquiryData = req.body;
-    const { data, error } = await supabase
-      .from('enquiries')
-      .insert([enquiryData])
-      .select();
-
-    if (error) throw error;
-    
-    res.status(201).json(data?.[0] || {});
+    const result = await enquiryService.submit(req.body);
+    res.status(201).json(result.data);
   } catch (error) {
-    console.error('Error creating enquiry:', error);
+    console.error('Error in POST /enquiries:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -632,44 +626,22 @@ router.post('/enquiries', async (req, res) => {
 router.post('/enquire', async (req, res) => {
   try {
     const enquiryData = req.body;
-    
+
     // Validate required fields
     if (!enquiryData.customer_name || !enquiryData.phone) {
       return res.status(400).json({ message: 'Name and phone are required' });
     }
 
-    // Prepare data for insertion, only include provided fields
-    const dataToInsert = {
-      customer_name: enquiryData.customer_name,
-      phone: enquiryData.phone,
+    const result = await enquiryService.submit({
+      ...enquiryData,
       enquiry_type: enquiryData.enquiry_type || 'General',
-      message: enquiryData.message,
-      email: enquiryData.email || null,
-      bike_id: enquiryData.bike_id || null,
-      second_hand_bike_id: enquiryData.second_hand_bike_id || null,
-      bike_type: enquiryData.bike_type || 'new',
-      budget_range: enquiryData.budget_range || null,
-      preferred_contact: enquiryData.preferred_contact || null,
-      purchase_timeline: enquiryData.purchase_timeline || null,
       status: enquiryData.status || 'New',
-      follow_up_date: enquiryData.follow_up_date || null,
-      assigned_to: enquiryData.assigned_to || null,
-      notes: enquiryData.notes || null
-    };
+      bike_type: enquiryData.bike_type || 'new'
+    });
 
-    const { data, error } = await supabase
-      .from('enquiries')
-      .insert([dataToInsert])
-      .select();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      throw error;
-    }
-    
-    res.status(201).json({ success: true, data: data?.[0] || {} });
+    res.status(201).json({ success: true, data: result.data });
   } catch (error) {
-    console.error('Error creating enquiry:', error);
+    console.error('Error in POST /enquire:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -687,7 +659,7 @@ router.put('/enquiries/:id', async (req, res) => {
       .select();
 
     if (error) throw error;
-    
+
     res.json(data?.[0] || {});
   } catch (error) {
     console.error('Error updating enquiry:', error);
@@ -705,7 +677,7 @@ router.delete('/enquiries/:id', async (req, res) => {
       .eq('id', id);
 
     if (error) throw error;
-    
+
     res.json({ message: 'Enquiry deleted successfully' });
   } catch (error) {
     console.error('Error deleting enquiry:', error);

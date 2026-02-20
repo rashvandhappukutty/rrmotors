@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { bikeAPI } from '@/lib/api';
 
 interface CareersApplicationFormProps {
   jobId: number;
@@ -110,27 +111,16 @@ export function CareersApplicationForm({
 
     try {
       setLoading(true);
-      const response = await fetch('/api/bikes/enquire', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customer_name: formData.customer_name,
-          email: formData.email,
-          phone: formData.phone,
-          enquiry_type: 'Career',
-          message: `Job Position: ${jobTitle}\nExperience: ${formData.experience_years} years\nExpected Salary: ${formData.expected_salary}\nAdditional Info: ${formData.message}`,
-          budget_range: formData.expected_salary,
-          status: 'New',
-          preferred_contact: 'Phone',
-        }),
+      await bikeAPI.createEnquiry({
+        customer_name: formData.customer_name,
+        email: formData.email,
+        phone: formData.phone,
+        enquiry_type: 'Career',
+        message: `Job Position: ${jobTitle}\nExperience: ${formData.experience_years} years\nExpected Salary: ${formData.expected_salary}\nAdditional Info: ${formData.message}`,
+        budget_range: formData.expected_salary,
+        status: 'New',
+        preferred_contact: 'Phone',
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to submit application');
-      }
 
       toast({
         title: 'Success',

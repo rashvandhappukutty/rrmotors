@@ -368,41 +368,22 @@ export const bikeAPI = {
 
   async createEnquiry(enquiryData: any) {
     try {
-      console.log('🚀 Initiating enquiry submission:', enquiryData);
+      console.log('🚀 [API] Submitting enquiry:', enquiryData.enquiry_type);
 
-      // Try the primary endpoint first
-      try {
-        const response = await safeFetch(`${API_URL}/bikes/enquiries`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(enquiryData)
-        });
-
-        if (response.ok) {
-          return await response.json();
-        }
-
-        console.warn(`⚠️ Primary endpoint /enquiries failed (${response.status}). Trying fallback...`);
-      } catch (primaryError) {
-        console.warn('⚠️ Primary endpoint failed with error. Trying fallback...', primaryError);
-      }
-
-      // Fallback to /enquire endpoint
-      console.log('🔄 Attempting fallback: POST /api/bikes/enquire');
-      const fallbackResponse = await safeFetch(`${API_URL}/bikes/enquire`, {
+      const response = await safeFetch(`${API_URL}/bikes/enquire`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(enquiryData)
       });
 
-      if (!fallbackResponse.ok) {
-        const errorData = await fallbackResponse.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${fallbackResponse.status}: Failed to create enquiry on both endpoints`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: Submission failed`);
       }
 
-      return await fallbackResponse.json();
+      return await response.json();
     } catch (error) {
-      console.error('❌ Final error in createEnquiry:', error);
+      console.error('❌ [API] createEnquiry failed:', error);
       throw error;
     }
   },
