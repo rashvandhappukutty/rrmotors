@@ -12,6 +12,7 @@ import { BikeDetail } from "./pages/BikeDetail";
 import { FinancePage } from "./pages/Finance";
 import { DiagnosticsPage } from "./pages/Diagnostics";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { API_URL } from "@/lib/api";
 
 const queryClient = new QueryClient();
@@ -29,40 +30,42 @@ const App = () => {
   useServerWarmup();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/finance" element={<FinancePage />} />
-            <Route path="/bike/:id" element={<BikeDetail isAdminView={false} />} />
-            <Route path="/bike/second-hand/:id" element={<BikeDetail isSecondHand={true} isAdminView={false} />} />
-            <Route
-              path="/admin/bike/:id"
-              element={
-                <ProtectedRoute>
-                  <BikeDetail isAdminView={true} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <Admin />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/diagnostics" element={<DiagnosticsPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/finance" element={<FinancePage />} />
+              <Route path="/bike/:id" element={<BikeDetail isAdminView={false} />} />
+              <Route path="/bike/second-hand/:id" element={<BikeDetail isSecondHand={true} isAdminView={false} />} />
+              <Route
+                path="/admin/bike/:id"
+                element={
+                  <ProtectedRoute>
+                    <BikeDetail isAdminView={true} />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <Admin />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/diagnostics" element={<DiagnosticsPage />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

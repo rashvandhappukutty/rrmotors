@@ -7,6 +7,7 @@ Based on the screenshots and code review, the following issues were found:
 1. **Serverless Function Handler**: The `api/index.js` file wasn't properly wrapping the Express app for Vercel's serverless environment
 2. **Cold Start Errors**: "Server is waking up" errors indicate Vercel serverless functions experiencing cold starts
 3. **Network Errors**: Admin login and service booking endpoints were failing with network errors
+4. **Blank Page**: The frontend is showing a blank page, likely due to build configuration issues
 
 ## Fixes Applied
 
@@ -22,6 +23,11 @@ Based on the screenshots and code review, the following issues were found:
 - Improved health check endpoint (`/api/health`) with more diagnostic information
 - Enhanced ping endpoint (`/api/ping`) for lightweight health checks
 - Added 404 handler for unmatched API routes
+
+### 4. Updated `vercel.json`
+- Added explicit `buildCommand` to ensure Vite build runs correctly
+- Configured proper routing for both API and frontend
+- Ensured static build outputs to `dist` directory
 
 ## Next Steps
 
@@ -96,3 +102,49 @@ If issues persist after redeployment:
 - `api/index.js` - Updated serverless function handler
 - `package.json` - Added serverless-http dependency
 - `server/index.js` - Enhanced error handling and health checks
+- `vercel.json` - Added explicit build command and improved configuration
+
+## Troubleshooting Blank Page Issue
+
+If the page is still blank after redeployment:
+
+### 1. Check Build Logs
+- Go to Vercel Dashboard → Your Project → Deployments
+- Click on the latest deployment
+- Check the "Build Logs" tab for any errors
+
+### 2. Verify Build Output
+- The build should create a `dist` folder with:
+  - `index.html`
+  - `assets/` folder with JS and CSS files
+- Check if these files exist in the deployment
+
+### 3. Check Browser Console
+- Open browser DevTools (F12)
+- Check the Console tab for JavaScript errors
+- Check the Network tab to see if assets are loading (status 200)
+
+### 4. Common Issues and Solutions
+
+**Issue: Build fails**
+- Solution: Check that all dependencies are in `package.json`
+- Run `npm install` locally to verify
+- Check for TypeScript errors: `npm run build` locally
+
+**Issue: Assets return 404**
+- Solution: Verify `distDir` in `vercel.json` matches Vite output
+- Check `vite.config.ts` for base path issues
+
+**Issue: JavaScript errors in console**
+- Solution: Check browser console for specific errors
+- Verify all environment variables are set in Vercel
+- Check if `serverless-http` is installed
+
+### 5. Manual Build Test
+Test the build locally before deploying:
+```bash
+npm install
+npm run build
+npm run preview
+```
+Visit `http://localhost:4173` to verify the build works locally.
