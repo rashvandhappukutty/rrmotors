@@ -31,13 +31,15 @@ async function safeFetch(url: string, options?: RequestInit): Promise<Response> 
 
       // Handle non-OK responses
       if (!response.ok) {
-        // For 502/503/504 (gateway errors), retry as these often indicate cold starts
-        if ([502, 503, 504].includes(response.status) && attempt < MAX_RETRIES) {
-          console.warn(`⚠️ [Gateway Error ${response.status}] ${method} ${url} - Retrying...`);
+        // For 502/503/504/524 (gateway/timeout errors), retry as these often indicate cold starts
+        // 524 is Vercel's specific timeout status code
+        if ([502, 503, 504, 524].includes(response.status) && attempt < MAX_RETRIES) {
           const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);
+          console.warn(`⚠️ [Gateway Error ${response.status}] ${method} ${url} - Retrying in ${delay/1000}s...`);
           await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
+          continue; // Retry the request
         }
+        // For other errors, still return the response so caller can handle it
         console.warn(`⚠️ [Response Error] ${method} ${url} (Status: ${response.status})`);
       } else {
         console.log(`✅ [Success] ${method} ${url} (Status: ${response.status})`);
@@ -389,20 +391,48 @@ export const bikeAPI = {
     try {
       console.log('🚀 [API] Submitting enquiry:', enquiryData.enquiry_type);
 
+      // Pre-flight check: Try to warm up the server first with a lightweight request
+      try {
+        await safeFetch(`${API_URL}/ping`, {
+          method: 'GET',
+        }).catch(() => {
+          // Ignore ping failures - just trying to wake up the server
+          console.log('Pre-flight ping completed (may have failed due to cold start)');
+        });
+      } catch (pingError) {
+        // Ignore ping errors - proceed with the actual request
+        console.log('Pre-flight ping failed, proceeding with enquiry submission');
+      }
+
       const response = await safeFetch(`${API_URL}/bikes/enquire`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(enquiryData)
       });
 
+      // safeFetch already handles retries, so if we get here, either:
+      // 1. The request succeeded (response.ok === true)
+      // 2. The request failed but retries are exhausted (response.ok === false)
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: Submission failed`);
+        // Try to get error message from response
+        let errorMessage = `HTTP ${response.status}: Submission failed`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // If we can't parse JSON, use status-based message
+          if (response.status === 504 || response.status === 503) {
+            errorMessage = 'Server is waking up. Please wait 30 seconds and try again.';
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       return await response.json();
     } catch (error) {
       console.error('❌ [API] createEnquiry failed:', error);
+      // Re-throw to let the caller handle it
       throw error;
     }
   },

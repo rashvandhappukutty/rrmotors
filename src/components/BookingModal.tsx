@@ -77,7 +77,7 @@ export function BookingModal({ isOpen, onClose, serviceType = 'Service' }: Booki
 
       console.log('Enquiry response:', result);
 
-      if (result && (result.id || Object.keys(result).length > 0)) {
+      if (result && (result.id || Object.keys(result).length > 0 || result.success || result.data)) {
         toast({
           title: 'Success',
           description: 'Service booking confirmed! Our team will contact you soon.',
@@ -104,15 +104,17 @@ export function BookingModal({ isOpen, onClose, serviceType = 'Service' }: Booki
       // Check if it's a cold start error
       const isColdStart = errorMessage.includes('waking up') || 
                          errorMessage.includes('attempts') || 
-                         errorMessage.includes('Failed to fetch');
+                         errorMessage.includes('Failed to fetch') ||
+                         errorMessage.includes('timeout') ||
+                         errorMessage.includes('Timeout');
       
       toast({
         title: 'Booking Failed',
         description: isColdStart
-          ? 'Server is waking up. Please wait 30 seconds and try again.'
+          ? 'Server is waking up. The system tried multiple times automatically. Please wait 30 seconds and try again, or refresh the page.'
           : errorMessage,
         variant: 'destructive',
-        duration: 5000 // Show for 5 seconds
+        duration: 8000 // Show for 8 seconds to give user time to read
       });
     } finally {
       setIsSubmitting(false);
