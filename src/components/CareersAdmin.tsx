@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, X, Loader2, Phone, Calendar } from 'lucide-react';
+import { API_URL } from '@/lib/api';
 
 interface JobPosting {
   id: number;
@@ -75,7 +76,7 @@ export function CareersAdmin() {
 
   const fetchJobPostings = async () => {
     try {
-      const response = await fetch('/api/jobs');
+      const response = await fetch(`${API_URL}/jobs`);
       if (!response.ok) {
         console.error('HTTP Error:', response.status);
         throw new Error(`HTTP ${response.status}: Failed to fetch jobs`);
@@ -102,7 +103,7 @@ export function CareersAdmin() {
 
   const fetchApplications = async () => {
     try {
-      const response = await fetch('/api/admin/applications');
+      const response = await fetch(`${API_URL}/admin/applications`);
       if (!response.ok) {
         console.error('HTTP Error:', response.status);
         throw new Error(`HTTP ${response.status}: Failed to fetch applications`);
@@ -144,7 +145,7 @@ export function CareersAdmin() {
 
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/jobs', {
+      const response = await fetch(`${API_URL}/admin/jobs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newJobData),
@@ -184,7 +185,7 @@ export function CareersAdmin() {
 
   const handleUpdateApplicationStatus = async (appId: number, newStatus: string) => {
     try {
-      const response = await fetch(`/api/admin/applications/${appId}`, {
+      const response = await fetch(`${API_URL}/admin/applications/${appId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -212,7 +213,7 @@ export function CareersAdmin() {
     if (!confirm('Are you sure you want to delete this job posting?')) return;
 
     try {
-      const response = await fetch(`/api/admin/jobs/${jobId}`, {
+      const response = await fetch(`${API_URL}/admin/jobs/${jobId}`, {
         method: 'DELETE',
       });
 

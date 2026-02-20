@@ -14,6 +14,7 @@ import {
 import { CareersApplicationForm } from '../components/CareersApplicationForm';
 import { Briefcase, MapPin, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { API_URL } from '@/lib/api';
 
 interface JobPosting {
   id: number;
@@ -39,7 +40,7 @@ export default function Careers() {
 
   const checkInitialization = async () => {
     try {
-      const response = await fetch('/api/init');
+      const response = await fetch(`${API_URL}/init`);
       if (!response.ok) {
         throw new Error('Failed to check initialization');
       }
@@ -67,7 +68,7 @@ export default function Careers() {
   const fetchJobPostings = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/jobs');
+      const response = await fetch(`${API_URL}/jobs`);
       if (!response.ok) {
         console.error('HTTP Error:', response.status);
         throw new Error(`HTTP ${response.status}: Failed to fetch job postings`);
@@ -102,7 +103,7 @@ export default function Careers() {
   return (
     <div className="min-h-screen bg-black">
       <Navbar />
-      
+
       <main className="pt-32 pb-20">
         <div className="container-custom">
           {/* Header Section */}
@@ -111,7 +112,7 @@ export default function Careers() {
               Join Our <span className="text-gradient">Team</span>
             </h1>
             <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              Be part of RR Motors and help us deliver excellence in every ride. 
+              Be part of RR Motors and help us deliver excellence in every ride.
               Explore exciting career opportunities with us.
             </p>
           </div>
@@ -135,7 +136,7 @@ export default function Careers() {
                   <li>4. Click "Run" to create the tables</li>
                   <li>5. Refresh this page</li>
                 </ol>
-                <Button 
+                <Button
                   onClick={() => checkInitialization()}
                   className="bg-gradient-primary hover:opacity-90"
                 >
