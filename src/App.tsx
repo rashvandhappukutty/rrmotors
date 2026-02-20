@@ -17,12 +17,32 @@ import { API_URL } from "@/lib/api";
 
 const queryClient = new QueryClient();
 
-// Warm up the server on page load (Render free tier spins down after inactivity)
+// Warm up the server on page load (Vercel serverless functions can cold start)
 function useServerWarmup() {
   useEffect(() => {
-    fetch(`${API_URL}/ping`).catch(() => {
-      // Silent fail — just waking up the server
-    });
+    // Warm up the API with a lightweight ping request
+    // This helps reduce cold start delays for subsequent requests
+    const warmup = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for warmup
+        
+        await fetch(`${API_URL}/ping`, {
+          method: 'GET',
+          signal: controller.signal,
+        }).catch(() => {
+          // Silent fail — just waking up the server
+          console.log('Server warmup initiated');
+        });
+        
+        clearTimeout(timeoutId);
+      } catch (error) {
+        // Ignore warmup errors
+        console.log('Server warmup completed (may take time on cold start)');
+      }
+    };
+    
+    warmup();
   }, []);
 }
 

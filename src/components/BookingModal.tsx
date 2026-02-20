@@ -100,12 +100,19 @@ export function BookingModal({ isOpen, onClose, serviceType = 'Service' }: Booki
     } catch (error) {
       console.error('Booking submission failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to submit booking. Please try again.';
+      
+      // Check if it's a cold start error
+      const isColdStart = errorMessage.includes('waking up') || 
+                         errorMessage.includes('attempts') || 
+                         errorMessage.includes('Failed to fetch');
+      
       toast({
         title: 'Booking Failed',
-        description: errorMessage.includes('attempts')
+        description: isColdStart
           ? 'Server is waking up. Please wait 30 seconds and try again.'
           : errorMessage,
-        variant: 'destructive'
+        variant: 'destructive',
+        duration: 5000 // Show for 5 seconds
       });
     } finally {
       setIsSubmitting(false);

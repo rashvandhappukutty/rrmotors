@@ -1,15 +1,15 @@
 export const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Helper: fetch with retry logic, timeout, and better error handling for production
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 1000; // 1 second
-const REQUEST_TIMEOUT = 45000; // 45 seconds (increased for Render free tier wake-up)
+const MAX_RETRIES = 5; // Increased retries for cold starts
+const INITIAL_RETRY_DELAY = 2000; // 2 seconds - longer delay for cold starts
+const REQUEST_TIMEOUT = 60000; // 60 seconds - increased for Vercel cold starts
 
 async function safeFetch(url: string, options?: RequestInit): Promise<Response> {
   let lastError: Error | null = null;
   const method = options?.method || 'GET';
 
-  console.log(`📡 [API Call] ${method} ${url} (Initial setup)`);
+  console.log(`📡 [API Call] ${method} ${url}`);
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
@@ -21,14 +21,26 @@ async function safeFetch(url: string, options?: RequestInit): Promise<Response> 
       const response = await window.fetch(url, {
         ...options,
         signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options?.headers,
+        },
       });
 
       clearTimeout(timeoutId);
 
-      if (response.ok) {
-        console.log(`✅ [Success] ${method} ${url} (Status: ${response.status})`);
-      } else {
+      // Handle non-OK responses
+      if (!response.ok) {
+        // For 502/503/504 (gateway errors), retry as these often indicate cold starts
+        if ([502, 503, 504].includes(response.status) && attempt < MAX_RETRIES) {
+          console.warn(`⚠️ [Gateway Error ${response.status}] ${method} ${url} - Retrying...`);
+          const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
         console.warn(`⚠️ [Response Error] ${method} ${url} (Status: ${response.status})`);
+      } else {
+        console.log(`✅ [Success] ${method} ${url} (Status: ${response.status})`);
       }
 
       return response;
@@ -41,7 +53,9 @@ async function safeFetch(url: string, options?: RequestInit): Promise<Response> 
         console.error(`❌ [Network Error] ${method} ${url} (attempt ${attempt}/${MAX_RETRIES}):`, error.message);
       }
 
+      // Retry on network errors or timeouts
       if (attempt < MAX_RETRIES) {
+        // Exponential backoff with longer delays for cold starts
         const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);
         console.log(`🔄 [Retry] Waiting ${delay / 1000}s before next attempt...`);
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -50,8 +64,13 @@ async function safeFetch(url: string, options?: RequestInit): Promise<Response> 
   }
 
   console.error(`💀 [Critical] All ${MAX_RETRIES} attempts failed for ${method} ${url}`);
+  
+  // More helpful error message
+  const isColdStart = lastError?.name === 'AbortError' || lastError?.message?.includes('Failed to fetch');
   throw new Error(
-    `Server connection failed after ${MAX_RETRIES} attempts. This usually happens if the server is sleeping — please wait 60 seconds and refresh the page.`
+    isColdStart
+      ? `Server is waking up. Please wait 30 seconds and try again. (Attempted ${MAX_RETRIES} times)`
+      : `Server connection failed after ${MAX_RETRIES} attempts. Please try again in a moment.`
   );
 }
 
