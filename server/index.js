@@ -193,66 +193,38 @@ app.get('/api/auth/admin', (req, res) => {
   }
 });
 
-// Health check endpoint
+// Health check endpoint (useful for warming up serverless functions)
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'Server is running', timestamp: new Date(), uptime: process.uptime() });
+  res.json({ 
+    status: 'Server is running', 
+    timestamp: new Date().toISOString(), 
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    vercel: !!process.env.VERCEL
+  });
 });
 
-// Keep-alive endpoint (lightweight, no DB calls)
+// Ping endpoint (lightweight health check)
 app.get('/api/ping', (req, res) => {
-  res.status(200).send('pong');
+  res.status(200).json({ message: 'pong', timestamp: new Date().toISOString() });
 });
 
-// Diagnostics endpoint
-app.get('/api/diagnostics', async (req, res) => {
-  try {
-    const diagnostics = {
-      server: 'Running',
-      timestamp: new Date(),
-      database: {
-        configured: !!process.env.DB_HOST,
-        host: process.env.DB_HOST ? '***' : 'Not set',
-        supabaseUrl: process.env.SUPABASE_URL ? '***' : 'Not set',
-        supabaseKey: process.env.SUPABASE_ANON_KEY ? '***' : 'Not set'
-      }
-    };
-
-    // Test Supabase
-    const { data: testData, error: testError } = await supabase
-      .from('bikes')
-      .select('id', { count: 'exact', head: true });
-
-    if (testError) {
-      diagnostics.database.supabaseConnection = 'Failed';
-      diagnostics.database.supabaseError = testError.message;
-    } else {
-      diagnostics.database.supabaseConnection = 'Success';
-    }
-
-    res.json(diagnostics);
-  } catch (error) {
-    res.status(500).json({
-      status: 'Diagnostic check failed',
-      error: error.message
-    });
-  }
-});
-
-// Serve frontend static files in production
-const distPath = path.join(__dirname, '..', 'dist');
-app.use(express.static(distPath));
-
-// SPA fallback - serve index.html for all non-API routes
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(distPath, 'index.html'));
-  }
+// 404 handler for unmatched routes
+app.use('/api', (req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: `API endpoint not found: ${req.method} ${req.path}` 
+  });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!', error: err.message });
+  console.error('💥 Server Error:', err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong on the server!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
 // Start server
