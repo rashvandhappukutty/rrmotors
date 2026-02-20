@@ -1,6 +1,7 @@
 services:
   - type: web
     name: rrmotors
+    runtime: node
     buildCommand: npm install && npx vite build && cd server && npm install
     startCommand: cd server && node index.js
     envVars:
