@@ -73,7 +73,12 @@ app.use('/api', (req, res, next) => {
 // Routes
 app.use('/api/bikes', bikeRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api', careersRoutes);
+app.use('/api', (req, res, next) => {
+  if (req.path.includes('enquir')) {
+    console.log(`📝 [Enquiry Request] ${req.method} ${req.originalUrl} - Body:`, JSON.stringify(req.body));
+  }
+  next();
+}, careersRoutes);
 
 // Store Bike Submission to Google Sheets
 app.post('/api/bikes/store-submission', async (req, res) => {
@@ -252,34 +257,30 @@ app.use((err, req, res, next) => {
 
 // Start server
 async function startServer() {
-  // Test Supabase connection
-  const isConnected = await testConnection();
-
-  if (!isConnected) {
-    console.error('⚠️  Warning: Could not connect to Supabase');
-  } else {
-    console.log('✅ Supabase connected successfully');
-  }
+  // Test Supabase connection (non-blocking in background)
+  testConnection().then(isConnected => {
+    if (!isConnected) {
+      console.error('⚠️  Warning: Could not connect to Supabase. Backend may be limited.');
+    } else {
+      console.log('✅ Supabase connected successfully');
+    }
+  }).catch(err => {
+    console.error('❌ Supabase connection test crashed:', err.message);
+  });
 
   // Check Cloudinary configuration
   if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
-    console.log('✅ Cloudinary configured:', {
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY ? '***' : 'Not set'
-    });
+    console.log('✅ Cloudinary configured');
   } else {
     console.warn('⚠️  Warning: Cloudinary not fully configured');
   }
 
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📝 API Documentation:`);
-    console.log(`   GET    /api/bikes           - Get all bikes`);
-    console.log(`   GET    /api/bikes/:id       - Get bike by ID`);
-    console.log(`   GET    /api/bikes/brand/:brand - Get bikes by brand`);
-    console.log(`   POST   /api/bikes           - Create new bike`);
-    console.log(`   PUT    /api/bikes/:id       - Update bike`);
-    console.log(`   DELETE /api/bikes/:id       - Delete bike`);
+    console.log(`📌 NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`📝 API Endpoints:`);
+    console.log(`   POST   /api/enquire (Alias for enquiries)`);
+    console.log(`   POST   /api/bikes/enquiries`);
   });
 }
 

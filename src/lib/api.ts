@@ -2,17 +2,21 @@ export const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Helper: fetch with retry logic, timeout, and better error handling for production
 const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 2000; // 2 seconds
-const REQUEST_TIMEOUT = 30000; // 30 seconds (Render free tier can take time to wake up)
+const INITIAL_RETRY_DELAY = 1000; // 1 second
+const REQUEST_TIMEOUT = 45000; // 45 seconds (increased for Render free tier wake-up)
 
 async function safeFetch(url: string, options?: RequestInit): Promise<Response> {
   let lastError: Error | null = null;
+  const method = options?.method || 'GET';
+
+  console.log(`📡 [API Call] ${method} ${url} (Initial setup)`);
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      // Create an AbortController for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+      console.log(`⏱️ [Attempt ${attempt}/${MAX_RETRIES}] ${method} ${url}`);
 
       const response = await window.fetch(url, {
         ...options,
@@ -20,30 +24,34 @@ async function safeFetch(url: string, options?: RequestInit): Promise<Response> 
       });
 
       clearTimeout(timeoutId);
+
+      if (response.ok) {
+        console.log(`✅ [Success] ${method} ${url} (Status: ${response.status})`);
+      } else {
+        console.warn(`⚠️ [Response Error] ${method} ${url} (Status: ${response.status})`);
+      }
+
       return response;
     } catch (error: any) {
       lastError = error;
 
-      // Don't retry if the request was intentionally aborted by the user
       if (error.name === 'AbortError') {
-        console.warn(`⏱️ Request timeout for ${options?.method || 'GET'} ${url} (attempt ${attempt}/${MAX_RETRIES})`);
+        console.error(`🛑 [Timeout] ${method} ${url} failed after ${REQUEST_TIMEOUT}ms (attempt ${attempt}/${MAX_RETRIES})`);
       } else {
-        console.warn(`❌ Network error for ${options?.method || 'GET'} ${url} (attempt ${attempt}/${MAX_RETRIES}):`, error.message);
+        console.error(`❌ [Network Error] ${method} ${url} (attempt ${attempt}/${MAX_RETRIES}):`, error.message);
       }
 
-      // If we have more retries, wait with exponential backoff
       if (attempt < MAX_RETRIES) {
         const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);
-        console.log(`🔄 Retrying in ${delay / 1000}s...`);
+        console.log(`🔄 [Retry] Waiting ${delay / 1000}s before next attempt...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }
 
-  // All retries exhausted
-  console.error(`❌ All ${MAX_RETRIES} attempts failed for ${options?.method || 'GET'} ${url}`);
+  console.error(`💀 [Critical] All ${MAX_RETRIES} attempts failed for ${method} ${url}`);
   throw new Error(
-    `Unable to reach the server after ${MAX_RETRIES} attempts. The server may be starting up — please wait a moment and try again.`
+    `Server connection failed after ${MAX_RETRIES} attempts. This usually happens if the server is sleeping — please wait 60 seconds and refresh the page.`
   );
 }
 
@@ -73,7 +81,7 @@ interface SecondHandBikeData {
   image_url?: string;
   availability?: boolean;
   features?: string[];
-  
+
   // Second-hand specific fields (matching schema)
   condition: string; // Required in schema
   mileage?: string;
@@ -89,7 +97,7 @@ export const bikeAPI = {
   // ============================================
   // NEW BIKES API
   // ============================================
-  
+
   // Get all new bikes
   async getAllBikes() {
     try {
@@ -358,25 +366,43 @@ export const bikeAPI = {
     }
   },
 
-  // Create new enquiry
   async createEnquiry(enquiryData: any) {
     try {
+      console.log('🚀 Initiating enquiry submission:', enquiryData);
+
       // Try the primary endpoint first
-      const response = await safeFetch(`${API_URL}/bikes/enquiries`, {
+      try {
+        const response = await safeFetch(`${API_URL}/bikes/enquiries`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(enquiryData)
+        });
+
+        if (response.ok) {
+          return await response.json();
+        }
+
+        console.warn(`⚠️ Primary endpoint /enquiries failed (${response.status}). Trying fallback...`);
+      } catch (primaryError) {
+        console.warn('⚠️ Primary endpoint failed with error. Trying fallback...', primaryError);
+      }
+
+      // Fallback to /enquire endpoint
+      console.log('🔄 Attempting fallback: POST /api/bikes/enquire');
+      const fallbackResponse = await safeFetch(`${API_URL}/bikes/enquire`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(enquiryData)
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: Failed to create enquiry`);
+
+      if (!fallbackResponse.ok) {
+        const errorData = await fallbackResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${fallbackResponse.status}: Failed to create enquiry on both endpoints`);
       }
-      
-      const data = await response.json();
-      return data;
+
+      return await fallbackResponse.json();
     } catch (error) {
-      console.error('Error creating enquiry:', error);
+      console.error('❌ Final error in createEnquiry:', error);
       throw error;
     }
   },
