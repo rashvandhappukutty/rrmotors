@@ -42,16 +42,17 @@ export function AdminDashboard() {
   const [inlineNewBrandNameSecondHand, setInlineNewBrandNameSecondHand] = useState('');
   const [editingBrandId, setEditingBrandId] = useState<number | null>(null);
   const [editingBrandName, setEditingBrandName] = useState('');
+  const [activeTab, setActiveTab] = useState('new-bikes');
 
   // Fetch brands, bikes, and enquiries on mount
   useEffect(() => {
     const fetchData = async () => {
       const allBrands = await bikeAPI.getAllBrands();
       setBrands(allBrands);
-      
+
       const bikes = await bikeAPI.getAllBikes();
       setAllBikes(bikes || []);
-      
+
       const secondHand = await bikeAPI.getAllSecondHandBikes();
       setAllSecondHandBikes(secondHand || []);
 
@@ -91,7 +92,7 @@ export function AdminDashboard() {
   // Delete new bike
   const handleDeleteBike = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this bike?')) return;
-    
+
     try {
       await bikeAPI.deleteBike(id);
       setAllBikes(allBikes.filter(b => b.id !== id));
@@ -111,13 +112,13 @@ export function AdminDashboard() {
   // Handle bike edit save
   const handleSaveEditBike = async () => {
     if (!editingBike) return;
-    
+
     try {
       setIsLoading(true);
-      
+
       // Check if it's a second-hand bike
       const isSecondHand = allSecondHandBikes.some(b => b.id === editingBike.id);
-      
+
       if (isSecondHand) {
         // Update second-hand bike
         await bikeAPI.updateSecondHandBike(editingBike.id, {
@@ -136,7 +137,7 @@ export function AdminDashboard() {
           description: editBikeForm.description,
           features: editBikeForm.features
         });
-        
+
         // Update second-hand bikes list
         setAllSecondHandBikes(allSecondHandBikes.map(b => b.id === editingBike.id ? { ...b, ...editBikeForm } : b));
       } else {
@@ -156,16 +157,16 @@ export function AdminDashboard() {
           description: editBikeForm.description,
           features: editBikeForm.features
         });
-        
+
         // Update bikes list
         setAllBikes(allBikes.map(b => b.id === editingBike.id ? { ...b, ...editBikeForm } : b));
       }
-      
+
       toast({
         title: 'Success',
         description: 'Bike updated successfully'
       });
-      
+
       setShowEditBikeModal(false);
       setEditingBike(null);
     } catch (error) {
@@ -183,7 +184,7 @@ export function AdminDashboard() {
   // Delete second-hand bike
   const handleDeleteSecondHand = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this bike?')) return;
-    
+
     try {
       await bikeAPI.deleteSecondHandBike(id);
       setAllSecondHandBikes(allSecondHandBikes.filter(b => b.id !== id));
@@ -551,22 +552,40 @@ export function AdminDashboard() {
             </h1>
             <p className="text-muted-foreground">Manage bike inventory and second-hand listings</p>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="border-primary/30 hover:bg-destructive/10 text-destructive hover:text-destructive"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => setActiveTab('new-bikes')}
+              variant="default"
+              className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Bike
+            </Button>
+            <Button
+              onClick={() => setActiveTab('second-hand')}
+              variant="default"
+              className="bg-accent/10 text-accent-foreground border-accent/20 hover:bg-accent/20"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Second Hand Bike
+            </Button>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="border-primary/30 hover:bg-destructive/10 text-destructive hover:text-destructive"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="new-bikes" className="space-y-4">
-          <TabsList className="grid w-full max-w-4xl grid-cols-5">
-            <TabsTrigger value="new-bikes">Add New Bikes</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid w-full max-w-5xl grid-cols-5">
+            <TabsTrigger value="new-bikes">Add New Bike</TabsTrigger>
             <TabsTrigger value="manage-bikes">Manage Bikes</TabsTrigger>
-            <TabsTrigger value="second-hand">Add Second Hand</TabsTrigger>
+            <TabsTrigger value="second-hand">Add Second Hand Bike</TabsTrigger>
             <TabsTrigger value="manage-brands">Manage Brands</TabsTrigger>
             <TabsTrigger value="enquiries">Enquiries ({enquiries.length})</TabsTrigger>
           </TabsList>
@@ -644,12 +663,12 @@ export function AdminDashboard() {
                             onClick={async () => {
                               const brandName = inlineNewBrandName.trim();
                               if (!brandName) return;
-                              
+
                               // Check if brand already exists (case-insensitive)
                               const existingBrand = brands.find(
                                 b => b.name.toLowerCase() === brandName.toLowerCase()
                               );
-                              
+
                               if (existingBrand) {
                                 // Use existing brand
                                 setNewBikeForm({ ...newBikeForm, brand_id: existingBrand.id.toString() });
@@ -716,8 +735,8 @@ export function AdminDashboard() {
                           </Button>
                         </div>
                       ) : (
-                        <Select 
-                          value={newBikeForm.brand_id} 
+                        <Select
+                          value={newBikeForm.brand_id}
                           onValueChange={(value) => {
                             if (value === 'other') {
                               setShowInlineNewBrand(true);
@@ -896,8 +915,30 @@ export function AdminDashboard() {
           <TabsContent value="manage-bikes" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Manage All Bikes</CardTitle>
-                <CardDescription>View, edit, and delete bikes from inventory</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Manage All Bikes</CardTitle>
+                    <CardDescription>View, edit, and delete bikes from inventory</CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-primary/30"
+                      onClick={() => setActiveTab('new-bikes')}
+                    >
+                      <Plus className="w-4 h-4 mr-1" /> New Bike
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-accent/30"
+                      onClick={() => setActiveTab('second-hand')}
+                    >
+                      <Plus className="w-4 h-4 mr-1" /> Second Hand
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {allBikes.length === 0 && allSecondHandBikes.length === 0 ? (
@@ -1072,12 +1113,12 @@ export function AdminDashboard() {
                             onClick={async () => {
                               const brandName = inlineNewBrandNameSecondHand.trim();
                               if (!brandName) return;
-                              
+
                               // Check if brand already exists (case-insensitive)
                               const existingBrand = brands.find(
                                 b => b.name.toLowerCase() === brandName.toLowerCase()
                               );
-                              
+
                               if (existingBrand) {
                                 // Use existing brand
                                 setSecondHandForm({ ...secondHandForm, brand_id: existingBrand.id.toString() });
@@ -1144,8 +1185,8 @@ export function AdminDashboard() {
                           </Button>
                         </div>
                       ) : (
-                        <Select 
-                          value={secondHandForm.brand_id} 
+                        <Select
+                          value={secondHandForm.brand_id}
                           onValueChange={(value) => {
                             if (value === 'other') {
                               setShowInlineNewBrandSecondHand(true);
@@ -1418,12 +1459,11 @@ export function AdminDashboard() {
                               </span>
                             </td>
                             <td className="py-3 px-2">
-                              <span className={`inline-block px-2 py-1 rounded-full text-xs ${
-                                enquiry.status === 'New' ? 'bg-blue-100 text-blue-800' :
-                                enquiry.status === 'Contacted' ? 'bg-yellow-100 text-yellow-800' :
-                                enquiry.status === 'Converted' ? 'bg-green-100 text-green-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
+                              <span className={`inline-block px-2 py-1 rounded-full text-xs ${enquiry.status === 'New' ? 'bg-blue-100 text-blue-800' :
+                                  enquiry.status === 'Contacted' ? 'bg-yellow-100 text-yellow-800' :
+                                    enquiry.status === 'Converted' ? 'bg-green-100 text-green-800' :
+                                      'bg-gray-100 text-gray-800'
+                                }`}>
                                 {enquiry.status}
                               </span>
                             </td>
@@ -1487,13 +1527,13 @@ export function AdminDashboard() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-muted-foreground">Status</p>
-                      <Select 
+                      <Select
                         defaultValue={selectedEnquiry.status}
                         onValueChange={async (newStatus) => {
                           try {
                             await bikeAPI.updateEnquiry(selectedEnquiry.id, { status: newStatus });
                             setSelectedEnquiry({ ...selectedEnquiry, status: newStatus });
-                            const updatedEnquiries = enquiries.map(e => 
+                            const updatedEnquiries = enquiries.map(e =>
                               e.id === selectedEnquiry.id ? { ...e, status: newStatus } : e
                             );
                             setEnquiries(updatedEnquiries);
