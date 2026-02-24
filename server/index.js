@@ -195,9 +195,9 @@ app.get('/api/auth/admin', (req, res) => {
 
 // Health check endpoint (useful for warming up serverless functions)
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'Server is running', 
-    timestamp: new Date().toISOString(), 
+  res.json({
+    status: 'Server is running',
+    timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
     vercel: !!process.env.VERCEL
@@ -209,11 +209,27 @@ app.get('/api/ping', (req, res) => {
   res.status(200).json({ message: 'pong', timestamp: new Date().toISOString() });
 });
 
+// Debug endpoint for production troubleshooting
+app.get('/api/debug', (req, res) => {
+  res.json({
+    status: 'online',
+    message: 'Backend API is reachable',
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: !!process.env.VERCEL,
+      SUPABASE_CONFIGURED: !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY),
+      ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || 'Not set'
+    },
+    headers: req.headers,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // 404 handler for unmatched routes
 app.use('/api', (req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: `API endpoint not found: ${req.method} ${req.path}` 
+  res.status(404).json({
+    success: false,
+    message: `API endpoint not found: ${req.method} ${req.path}`
   });
 });
 

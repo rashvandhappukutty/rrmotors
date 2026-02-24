@@ -1,14 +1,13 @@
-import serverless from 'serverless-http';
 import app from '../server/index.js';
 
-// Set Vercel environment flags at module level (only once)
-if (!process.env.VERCEL) {
-    process.env.VERCEL = '1';
-}
-if (!process.env.NODE_ENV) {
-    process.env.NODE_ENV = 'production';
-}
+console.log('🚀 Vercel Serverless Function Initializing...');
 
-// Wrap Express app with serverless-http for Vercel compatibility
-// This ensures proper async handling and request/response conversion
-export default serverless(app);
+// Set Vercel environment flags at module level (only once)
+process.env.VERCEL = '1';
+process.env.NODE_ENV = 'production';
+
+// Export the Express app directly for Vercel's @vercel/node runtime
+export default (req, res) => {
+    console.log(`⏱️ [Vercel Request] ${req.method} ${req.url}`);
+    return app(req, res);
+};
