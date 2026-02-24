@@ -1,8 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { API_URL, safeFetch } from './api';
 
-const SUPABASE_URL = 'https://hncighhoeqmrvmdxdtns.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuY2lnaGhvZXFtcnZtZHhkdG5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2ODg5MjMsImV4cCI6MjA4NTI2NDkyM30.hL7_QzOJozTJHqQlVpVL_vwp-659yv0X_n8ZQknZ1Ig';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://zsxqloxouiypeododnyn.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
