@@ -1,12 +1,12 @@
 {
     "rewrites": [
         {
-            "source": "/api/:path*",
-            "destination": "/api/index.js"
+            "source": "/admin",
+            "destination": "/index.html"
         },
         {
-            "source": "/:path((?!api/|assets/|favicon.ico|logo.png|1st.jpeg|2nd.jpeg|3rd.jpeg|IMG_).*)",
-            "destination": "/index.html"
+            "source": "/api/:path*",
+            "destination": "/api/index.js"
         }
     ]
 }
