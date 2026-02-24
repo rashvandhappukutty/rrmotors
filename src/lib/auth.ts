@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { API_URL } from './api';
+import { API_URL, safeFetch } from './api';
 
 const SUPABASE_URL = 'https://hncighhoeqmrvmdxdtns.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuY2lnaGhvZXFtcnZtZHhkdG5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2ODg5MjMsImV4cCI6MjA4NTI2NDkyM30.hL7_QzOJozTJHqQlVpVL_vwp-659yv0X_n8ZQknZ1Ig';
@@ -11,16 +11,16 @@ export async function loginAdmin(username: string, password: string) {
   try {
     let response: Response;
     try {
-      response = await fetch(`${API_URL}/auth/admin-login`, {
+      response = await safeFetch(`${API_URL}/auth/admin-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ username, password })
       });
-    } catch (networkError) {
+    } catch (networkError: any) {
       console.error('Network error during login:', networkError);
-      return { success: false, error: 'Network error: Unable to reach the server. Please check your connection.' };
+      return { success: false, error: networkError.message || 'Unable to reach the server. Please check your connection.' };
     }
 
     const data = await response.json();
@@ -47,23 +47,23 @@ export async function loginAdmin(username: string, password: string) {
 export async function getAdminInfo() {
   try {
     const token = localStorage.getItem('admin_token');
-    
+
     if (!token) {
       return { success: false, error: 'Not logged in' };
     }
 
     let response: Response;
     try {
-      response = await fetch(`${API_URL}/auth/admin`, {
+      response = await safeFetch(`${API_URL}/auth/admin`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-    } catch (networkError) {
+    } catch (networkError: any) {
       console.error('Network error getting admin info:', networkError);
-      return { success: false, error: 'Network error: Unable to reach the server.' };
+      return { success: false, error: networkError.message || 'Unable to reach the server.' };
     }
 
     const data = await response.json();

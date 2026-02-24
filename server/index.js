@@ -133,7 +133,10 @@ app.post('/api/auth/admin-login', (req, res) => {
   try {
     const { username, password } = req.body;
 
+    console.log(`🔐 [Login Attempt] User: ${username || 'empty'}, Pass provided: ${!!password}`);
+
     if (!username || !password) {
+      console.warn('⚠️ [Login Failed] Missing credentials');
       return res.status(400).json({ message: 'Username and password are required' });
     }
 

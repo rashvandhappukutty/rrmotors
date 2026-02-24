@@ -5,7 +5,7 @@ const MAX_RETRIES = 5; // Increased retries for cold starts
 const INITIAL_RETRY_DELAY = 2000; // 2 seconds - longer delay for cold starts
 const REQUEST_TIMEOUT = 60000; // 60 seconds - increased for Vercel cold starts
 
-async function safeFetch(url: string, options?: RequestInit): Promise<Response> {
+export async function safeFetch(url: string, options?: RequestInit): Promise<Response> {
   let lastError: Error | null = null;
   const method = options?.method || 'GET';
 
@@ -35,7 +35,7 @@ async function safeFetch(url: string, options?: RequestInit): Promise<Response> 
         // 524 is Vercel's specific timeout status code
         if ([502, 503, 504, 524].includes(response.status) && attempt < MAX_RETRIES) {
           const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);
-          console.warn(`⚠️ [Gateway Error ${response.status}] ${method} ${url} - Retrying in ${delay/1000}s...`);
+          console.warn(`⚠️ [Gateway Error ${response.status}] ${method} ${url} - Retrying in ${delay / 1000}s...`);
           await new Promise(resolve => setTimeout(resolve, delay));
           continue; // Retry the request
         }
@@ -66,7 +66,7 @@ async function safeFetch(url: string, options?: RequestInit): Promise<Response> 
   }
 
   console.error(`💀 [Critical] All ${MAX_RETRIES} attempts failed for ${method} ${url}`);
-  
+
   // More helpful error message
   const isColdStart = lastError?.name === 'AbortError' || lastError?.message?.includes('Failed to fetch');
   throw new Error(
@@ -413,7 +413,7 @@ export const bikeAPI = {
       // safeFetch already handles retries, so if we get here, either:
       // 1. The request succeeded (response.ok === true)
       // 2. The request failed but retries are exhausted (response.ok === false)
-      
+
       if (!response.ok) {
         // Try to get error message from response
         let errorMessage = `HTTP ${response.status}: Submission failed`;
