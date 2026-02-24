@@ -1,32 +1,12 @@
 {
-    "version": 2,
-    "framework": "vite",
-    "cleanUrls": true,
-    "trailingSlash": false,
-    "builds": [
+    "rewrites": [
         {
-            "src": "api/index.js",
-            "use": "@vercel/node"
+            "source": "/api/(.*)",
+            "destination": "/api/index.js"
         },
         {
-            "src": "package.json",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "dist"
-            }
-        }
-    ],
-    "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "/api/index.js"
-        },
-        {
-            "handle": "filesystem"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/index.html"
+            "source": "/((?!api/).*)",
+            "destination": "/index.html"
         }
     ]
 }
