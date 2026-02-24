@@ -8,6 +8,9 @@ process.env.NODE_ENV = 'production';
 
 // Export the Express app directly for Vercel's @vercel/node runtime
 export default (req, res) => {
-    console.log(`⏱️ [Vercel Request] ${req.method} ${req.url}`);
+    // Vercel sometimes pre-parses the body. Let's log it for debugging.
+    const bodyState = req.body ? `Parsed (${typeof req.body})` : 'Raw';
+    console.log(`⏱️ [Vercel Request] ${req.method} ${req.url} | Body: ${bodyState}`);
+
     return app(req, res);
 };
