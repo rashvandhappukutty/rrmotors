@@ -5,19 +5,7 @@
             "destination": "/api/index.js"
         },
         {
-            "source": "/test-rewrite",
-            "destination": "/test-routing.txt"
-        },
-        {
-            "source": "/admin",
-            "destination": "/index.html"
-        },
-        {
-            "source": "/login",
-            "destination": "/index.html"
-        },
-        {
-            "source": "/((?!api/).*)",
+            "source": "/:path((?!api/|assets/|favicon.ico|logo.png|1st.jpeg|2nd.jpeg|3rd.jpeg|IMG_).*)",
             "destination": "/index.html"
         }
     ]
