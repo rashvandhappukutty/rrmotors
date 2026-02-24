@@ -241,12 +241,25 @@ app.get('/api/debug', (req, res) => {
   });
 });
 
-// 404 handler for unmatched routes
+// 404 handler for unmatched API routes
 app.use('/api', (req, res) => {
   res.status(404).json({
     success: false,
     message: `API endpoint not found: ${req.method} ${req.path}`
   });
+});
+
+// Serve static assets from the frontend build (dist directory)
+const distPath = path.resolve(__dirname, '..', 'dist');
+app.use(express.static(distPath));
+
+// Catch-all route for SPA: Serve index.html for any request that doesn't match an API or static file
+app.get('*', (req, res) => {
+  // Only handle GET requests and not API calls
+  if (req.method !== 'GET' || req.path.startsWith('/api')) {
+    return res.status(404).json({ message: 'Not Found' });
+  }
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // Error handling middleware
