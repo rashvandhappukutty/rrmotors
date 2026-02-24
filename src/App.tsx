@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
@@ -26,7 +26,7 @@ function useServerWarmup() {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for warmup
-        
+
         await fetch(`${API_URL}/ping`, {
           method: 'GET',
           signal: controller.signal,
@@ -34,14 +34,14 @@ function useServerWarmup() {
           // Silent fail — just waking up the server
           console.log('Server warmup initiated');
         });
-        
+
         clearTimeout(timeoutId);
       } catch (error) {
         // Ignore warmup errors
         console.log('Server warmup completed (may take time on cold start)');
       }
     };
-    
+
     warmup();
   }, []);
 }
@@ -55,7 +55,7 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
@@ -82,7 +82,7 @@ const App = () => {
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
+          </HashRouter>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
