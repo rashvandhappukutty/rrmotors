@@ -1,16 +1,24 @@
 {
-    "version": 2,
-    "routes": [
+    "rewrites": [
         {
-            "handle": "filesystem"
+            "source": "/api/:path*",
+            "destination": "/api/index.js"
         },
         {
-            "src": "/api/(.*)",
-            "dest": "/api/index.js"
+            "source": "/test-rewrite",
+            "destination": "/test-routing.txt"
         },
         {
-            "src": "/(.*)",
-            "dest": "/index.html"
+            "source": "/admin",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/login",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/((?!api/).*)",
+            "destination": "/index.html"
         }
     ]
 }
