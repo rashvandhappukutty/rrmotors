@@ -3,11 +3,14 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && cd server && npm install",
     "dev": "vite",
     "dev:server": "npm run dev --prefix server",
-    "start": "concurrently \"npm run dev\" \"npm run dev:server\"",
+    "start": "node server/index.js",
     "build:app": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
