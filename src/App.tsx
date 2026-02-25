@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import { BikeDetail } from "./pages/BikeDetail";
 import { FinancePage } from "./pages/Finance";
 import { DiagnosticsPage } from "./pages/Diagnostics";
+import Careers from "./pages/Careers";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { API_URL } from "@/lib/api";
@@ -55,11 +56,12 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/finance" element={<FinancePage />} />
+              <Route path="/careers" element={<Careers />} />
               <Route path="/bike/:id" element={<BikeDetail isAdminView={false} />} />
               <Route path="/bike/second-hand/:id" element={<BikeDetail isSecondHand={true} isAdminView={false} />} />
               <Route
@@ -82,7 +84,7 @@ const App = () => {
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </HashRouter>
+          </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
